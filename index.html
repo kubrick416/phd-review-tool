@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="考博复习">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c96442">
 <title>考博复习工具</title>
 <style>
 :root {
@@ -473,22 +475,46 @@ let flashIdx = 0;
 let flipped = false;
 let quizIdx = 0;
 
-// Persistent state
-function loadState() {
-  try {
-    const s = JSON.parse(localStorage.getItem('phd_review_state') || '{}');
-    return {
-      flashMastered: new Set(s.flashMastered || []),
-      flashLearning: new Set(s.flashLearning || []),
-      quizCorrect: new Set(s.quizCorrect || []),
-      quizWrong: new Set(s.quizWrong || []),
-      essayDrafts: s.essayDrafts || {},
-      totalSessions: (s.totalSessions || 0) + 1,
-    };
-  } catch(e) { return { flashMastered: new Set(), flashLearning: new Set(), quizCorrect: new Set(), quizWrong: new Set(), essayDrafts: {}, totalSessions: 1 }; }
+// Persistent state — IndexedDB for iOS reliability, localStorage as fallback
+const DB_NAME = 'phdReviewDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'state';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => { req.result.createObjectStore(STORE_NAME); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
-function saveState() {
-  const s = {
+
+async function idbGet(key) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } catch(e) { return undefined; }
+}
+
+async function idbSet(key, val) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(val, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e) { /* fallback handled below */ }
+}
+
+function stateToJSON() {
+  return {
     flashMastered: [...state.flashMastered],
     flashLearning: [...state.flashLearning],
     quizCorrect: [...state.quizCorrect],
@@ -496,9 +522,53 @@ function saveState() {
     essayDrafts: state.essayDrafts,
     totalSessions: state.totalSessions,
   };
-  localStorage.setItem('phd_review_state', JSON.stringify(s));
 }
-const state = loadState();
+
+function parseStateJSON(s) {
+  return {
+    flashMastered: new Set(s.flashMastered || []),
+    flashLearning: new Set(s.flashLearning || []),
+    quizCorrect: new Set(s.quizCorrect || []),
+    quizWrong: new Set(s.quizWrong || []),
+    essayDrafts: s.essayDrafts || {},
+    totalSessions: (s.totalSessions || 0) + 1,
+  };
+}
+
+const EMPTY_STATE = { flashMastered: new Set(), flashLearning: new Set(), quizCorrect: new Set(), quizWrong: new Set(), essayDrafts: {}, totalSessions: 1 };
+
+// Load synchronously from localStorage first (for immediate render), then upgrade from IDB
+function loadStateSync() {
+  try {
+    const s = JSON.parse(localStorage.getItem('phd_review_state') || '{}');
+    if (s.flashMastered) return parseStateJSON(s);
+    return { ...EMPTY_STATE };
+  } catch(e) { return { ...EMPTY_STATE }; }
+}
+
+async function loadStateFromIDB() {
+  const s = await idbGet('phd_review_state');
+  if (s && s.flashMastered) {
+    const parsed = parseStateJSON(s);
+    // Merge: keep whichever has more progress
+    if (parsed.flashMastered.size + parsed.quizCorrect.size > state.flashMastered.size + state.quizCorrect.size) {
+      Object.assign(state, parsed);
+      renderStats();
+      renderCurrentPanel();
+    }
+  }
+}
+
+function saveState() {
+  const s = stateToJSON();
+  // Write to both for maximum persistence
+  try { localStorage.setItem('phd_review_state', JSON.stringify(s)); } catch(e) {}
+  idbSet('phd_review_state', s);
+}
+
+const state = loadStateSync();
+// Async upgrade from IDB (in case localStorage was cleared but IDB survived)
+loadStateFromIDB();
 
 // ============ HELPERS ============
 function filtered(arr) {
@@ -771,6 +841,11 @@ function renderProgress() {
 renderStats();
 renderModuleFilter();
 renderQuiz();
+
+// Register Service Worker for PWA + offline + data persistence
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
