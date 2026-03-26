@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="考博复习">
+<title>考博复习工具</title>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --card: #1a1a2e;
+  --card2: #16213e;
+  --accent: #e94560;
+  --accent2: #0f3460;
+  --text: #eee;
+  --text2: #aaa;
+  --green: #4ecca3;
+  --yellow: #ffc857;
+  --radius: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+.container { max-width: 680px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 20px 0 10px;
+}
+.header h1 { font-size: 1.5em; margin-bottom: 4px; }
+.header .sub { color: var(--text2); font-size: 0.85em; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+.stat-chip {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.stat-chip .num { color: var(--accent); font-weight: 700; }
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  color: var(--text2);
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Module filter */
+.module-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.mod-btn {
+  background: var(--card2);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.75em;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mod-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(233,69,96,0.1); }
+
+/* Card */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  border-left: 3px solid var(--accent);
+  animation: fadeIn 0.3s;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card-label {
+  display: inline-block;
+  background: var(--accent2);
+  color: var(--green);
+  font-size: 0.7em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+.card h3 { font-size: 1.05em; margin-bottom: 10px; line-height: 1.5; }
+.card p, .card li { font-size: 0.9em; line-height: 1.7; color: var(--text2); }
+.card ul { padding-left: 18px; margin-top: 6px; }
+
+/* Answer area */
+.answer-box {
+  background: #111;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 12px;
+  display: none;
+  border: 1px solid #222;
+}
+.answer-box.show { display: block; animation: fadeIn 0.3s; }
+.answer-box h4 { color: var(--green); font-size: 0.85em; margin-bottom: 8px; }
+.answer-box p, .answer-box li { font-size: 0.85em; line-height: 1.7; color: #ccc; }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-outline { background: none; border: 1px solid #444; color: var(--text2); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-small { padding: 6px 14px; font-size: 0.8em; }
+.btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* Flashcard */
+.flashcard-container { perspective: 1000px; margin-bottom: 14px; }
+.flashcard {
+  background: linear-gradient(135deg, var(--card), var(--card2));
+  border-radius: var(--radius);
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back {
+  backface-visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.flashcard-back { transform: rotateY(180deg); }
+.flashcard-front h3 { font-size: 1.1em; line-height: 1.6; }
+.flashcard-front .hint { color: var(--text2); font-size: 0.75em; margin-top: 12px; }
+.flashcard-back p { font-size: 0.9em; line-height: 1.7; color: #ccc; }
+.flashcard-back .concept-tag { color: var(--yellow); font-size: 0.75em; margin-bottom: 8px; }
+.flashcard-nav { display: flex; justify-content: center; gap: 12px; margin-top: 10px; align-items: center; }
+.flashcard-counter { color: var(--text2); font-size: 0.85em; }
+
+/* Writing */
+.writing-prompt {
+  background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  border-left: 3px solid var(--yellow);
+}
+.writing-prompt h3 { color: var(--yellow); margin-bottom: 8px; }
+.writing-area {
+  width: 100%;
+  min-height: 200px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 14px;
+  color: var(--text);
+  font-size: 0.9em;
+  line-height: 1.8;
+  resize: vertical;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+.writing-area:focus { outline: none; border-color: var(--yellow); }
+.guide-box {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: none;
+}
+.guide-box.show { display: block; animation: fadeIn 0.3s; }
+.guide-box h4 { color: var(--yellow); font-size: 0.85em; margin-bottom: 8px; }
+.guide-box p, .guide-box li { font-size: 0.85em; line-height: 1.7; color: #ccc; }
+.guide-box ol { padding-left: 18px; }
+
+/* Progress */
+.progress-ring {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+.ring-visual {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: conic-gradient(var(--green) var(--pct, 0%), #333 0%);
+  display: flex; align-items: center; justify-content: center;
+}
+.ring-inner { width: 38px; height: 38px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 700; }
+
+/* Hidden */
+.hidden { display: none; }
+
+/* Responsive */
+@media (max-width: 400px) {
+  .tab { font-size: 0.75em; padding: 8px 4px; }
+  .card { padding: 16px; }
+}
+
+/* Self-check rating buttons */
+.rating-btns { display:flex; gap:8px; margin-top:10px; }
+.rate-btn {
+  flex:1; padding:8px; border-radius:8px; border:none; font-size:0.8em; cursor:pointer;
+  font-weight:500; transition: all 0.15s;
+}
+.rate-bad { background: #4a1525; color: #ff6b8a; }
+.rate-ok { background: #3a3520; color: #ffc857; }
+.rate-good { background: #1a3a2a; color: #4ecca3; }
+.rate-btn:active { transform: scale(0.96); }
+
+/* Quiz mode */
+.quiz-options { margin-top: 12px; }
+.quiz-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.5;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { border-color: var(--green); background: rgba(78,204,163,0.1); }
+.quiz-opt.wrong { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.quiz-opt.disabled { pointer-events: none; opacity: 0.7; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>考博复习工具</h1>
+    <div class="sub">哲学 · 表演学 · 电影史 · 随时随地</div>
+  </div>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('quiz')">问答</button>
+    <button class="tab" onclick="switchTab('flash')">闪卡</button>
+    <button class="tab" onclick="switchTab('write')">论述</button>
+    <button class="tab" onclick="switchTab('progress')">进度</button>
+  </div>
+
+  <div class="module-filter" id="moduleFilter"></div>
+
+  <!-- Quiz Panel -->
+  <div id="panel-quiz"></div>
+  <!-- Flash Panel -->
+  <div id="panel-flash" class="hidden"></div>
+  <!-- Write Panel -->
+  <div id="panel-write" class="hidden"></div>
+  <!-- Progress Panel -->
+  <div id="panel-progress" class="hidden"></div>
+</div>
+
+<script>
+// ============ DATA ============
+
+const MODULES = [
+  { id: 'stan', name: '斯坦尼体系', short: '斯坦尼', color: '#e94560' },
+  { id: 'chekhov', name: '契诃夫方法', short: '契诃夫', color: '#0f3460' },
+  { id: 'method', name: '方法派', short: '方法派', color: '#533483' },
+  { id: 'compare', name: '三大体系', short: '三大体系', color: '#4ecca3' },
+  { id: 'perform', name: '人类表演学', short: '表演学', color: '#ffc857' },
+  { id: 'china', name: '中国表演理论', short: '中国理论', color: '#e07c24' },
+  { id: 'tech', name: '技术哲学', short: '技术哲学', color: '#2d6cdf' },
+];
+
+// Flashcards data
+const flashcards = [
+  // 斯坦尼体系
+  { module:'stan', q:'体系的三大哲学原则是什么？', a:'1) 能动性与行动原则——动作是表演的基础；2) 有机天性原则——遵循人的自然生命规律；3) "通过有意识达到下意识"——系统训练为灵感铺路。' },
+  { module:'stan', q:'"魔术般的假使"(Magic If) 是什么？', a:'演员创造活动的起点。通过自问"假如我处在角色的情境中，我会怎么做"来启动有机创作。它不强迫相信虚假，而是通过假设激发想象力。与规定情境的关系：假使提出假设，规定情境提供具体内容。' },
+  { module:'stan', q:'注意力的"三个圈"是什么？', a:'小圈：注意力集中在自身或手中物件上（最私密）；中圈：扩展到对手和局部舞台空间；大圈：涵盖整个舞台乃至观众席。训练目标是实现"当众孤独"。' },
+  { module:'stan', q:'"最高任务"与"贯穿动作"的关系？', a:'最高任务是全剧追求的终极精神目标，是指南针和天花板；贯穿动作是角色为实现最高任务而执行的贯穿全剧的不间断意志行动线，是脊椎。比喻：散落的珍珠（单元任务）被一根线（贯穿动作）穿起来，指向最高任务。' },
+  { module:'stan', q:'形体动作方法的核心逻辑是什么？', a:'斯坦尼晚年突破：从具体的形体动作入手，在正确规定情境中执行，由此自然激发内在心理体验。核心逆转：早期"由内到外"→晚期"由外到内"。形体动作的"小小真实"能带来体验的"大真实"。' },
+  { module:'stan', q:'角色创造的三个阶段？', a:'认识（初读剧本的直觉印象+理性分析）→ 体验（在排练中通过假使和规定情境"活"起来）→ 体现（将内部体验通过声音、形体、节奏传达给观众）。体验是基础，体现是目的。' },
+  { module:'stan', q:'什么是"潜台词"？', a:'隐藏在台词文字背后的、未说出口的真实含义和心理动机。角色说的话（文本）和角色想的事（潜台词）往往不一致甚至相反。斯坦尼："观众来到剧院不是为了听文字，而是为了看文字后面的东西。"' },
+  { module:'stan', q:'"内在驱动力"的三大力量？', a:'智慧（理性分析）、意志（追求目标、克服障碍）、情感（对情境的真实感受）。三者必须协调：只有理智则冰冷，只有情感则无方向，只有意志则盲目。' },
+  { module:'stan', q:'什么是"肌肉监督员"？', a:'一种始终在后台运行的内部监控意识，随时发现并消除多余肌肉紧张。松弛不是目的而是条件——身体松弛了，情感和动作才能自由流动。它与注意力集中互为表里。' },
+  { module:'stan', q:'情感记忆的两条唤起路径？', a:'1) 从情感到刺激物：先回忆强烈情感，再追溯引发该情感的具体情境；2) 从刺激物到情感：先回忆具体感官细节（声音、气味、画面），由此唤醒关联情感。注：斯坦尼晚年弱化了对情感记忆的依赖，转向形体动作方法。' },
+
+  // 契诃夫方法
+  { module:'chekhov', q:'什么是"心理姿态"(Psychological Gesture, PG)？', a:'用一个全身性的肢体动作凝缩角色的内在意志。是迈克尔·契诃夫方法的核心工具，帮助演员快速进入角色——通过身体找到角色的心理本质。' },
+  { module:'chekhov', q:'契诃夫方法的"四兄弟"是什么？', a:'轻松感（Ease）、形式感（Form）、美感（Beauty）、整体感（Entirety）——演员创作的四个基本品质。' },
+  { module:'chekhov', q:'"辐射"(Radiation)在契诃夫方法中指什么？', a:'能量的投射与接收。演员通过身体向外投射内在能量，同时接收外部环境和对手的能量。这是表演交流的能量基础。' },
+  { module:'chekhov', q:'契诃夫的"气氛"概念？', a:'Atmosphere——演员如何创造和利用空间气氛。气氛不是布景或灯光创造的，而是演员通过内在想象和外在行动共同营造的。气氛先于个人情感存在。' },
+
+  // 方法派
+  { module:'method', q:'方法派三大传承人及其核心分歧？', a:'斯特拉斯伯格：强调"感官记忆"和"情感记忆"（从个人经历中提取情感）；阿德勒：批判情感记忆，强调"想象力"与"规定情境"（想象角色的世界而非回忆自己的经历）；迈斯纳：发明"重复练习"，强调"真实冲动"和对对手的真实反应。' },
+  { module:'method', q:'方法派与斯坦尼体系的渊源？', a:'美国实验剧团（Group Theatre, 1931）由哈罗德·克勒曼、李·斯特拉斯伯格、谢丽尔·克劳福德创立，将斯坦尼早期体系引入美国。但三大传承人对斯坦尼的理解和发展各不相同，形成了方法派的三支流派。' },
+  { module:'method', q:'迈斯纳的"重复练习"是什么？', a:'两名演员面对面，一人描述对方的行为或状态，另一人重复这句话。通过反复练习，训练演员：1）真实地观察对手；2）从对手身上获得冲动而非自我内部制造；3）建立真实的即时反应。核心理念："活在对手的眼睛里"。' },
+
+  // 三大体系
+  { module:'compare', q:'三大表演体系在"演员与角色关系"上的区别？', a:'斯坦尼：化身为角色（第一自我消融）；布莱希特：演员与角色保持距离（双重形象）；中国戏曲：程式化表演中"出入"自如。' },
+  { module:'compare', q:'布莱希特"间离效果"的精准定义？', a:'通过艺术手段使本来熟悉的事物变得"陌生"和"令人惊异"，打破观众思维惰性，迫使重新审视社会关系。间离≠疏离——目的不是远离戏剧，而是与惯性认知拉开距离。布莱希特不反对一切情感，反对的是情感替代思考。' },
+  { module:'compare', q:'布莱希特"街头事故目击者"比喻？', a:'一个人在街头向围观者描述他目睹的车祸。他会模仿司机和行人的动作，但不试图"变成"他们——始终是"展示者"，且展示带有明确目的（证明谁有过错）。这就是布莱希特要求的演员状态。' },
+  { module:'compare', q:'梅耶荷德"生物力学"的核心公式？', a:'N = A1 + A2。A1=意图（构思），A2=实现（体现），N=反应（自然涌现的情感）。关键：情感不是出发点而是结果——先正确行动，情感随之而来。与斯坦尼晚期形体动作方法高度一致。' },
+  { module:'compare', q:'生物力学动作三阶段？', a:'制动（Otkaz）→ 发送（Posyl）→ 定位（Tochka）。制动：先向相反方向做预备动作，为动作蓄力；发送：释放能量为明确行动；定位：动作终点的短暂静止和控制。与中国戏曲"起、行、收"惊人相似。' },
+
+  // 中国表演理论
+  { module:'china', q:'中国戏曲表演"十六字精华"？', a:'虚实结合、形神兼备、设身处地、似我非我。逻辑递进：虚实结合（表演与世界的关系）→形神兼备（身体与精神的关系）→设身处地（演员与角色的关系）→似我非我（自我与他者的关系）。' },
+  { module:'china', q:'"似我非我"如何超越斯坦尼与布莱希特？', a:'既不是斯坦尼的完全成为角色，也不是布莱希特的完全间离——是中国式第三路径。角色中有"我"的真实体验（似我），但"我"已被角色转化（非我）。与Phelan表演本体论对话：表演者同时"在场"和"缺席"。' },
+  { module:'china', q:'焦菊隐的"心象说"是什么？', a:'焦菊隐将斯坦尼体系与中国戏曲传统结合的创造性贡献。演员在接触角色后，内心会形成一个角色的"心象"（内心形象），这个心象是角色从演员自身有机天性中生长出来的结果。这是北电体系的独特贡献，也是斯坦尼体系中国化的标志成果。' },
+  { module:'china', q:'赵宁宇的学术背景和核心位置？', a:'北京电影学院表演学院教授、博导，戏剧艺术研究院院长。兼具导演、演员、学者三重身份。主要著作：《表演技术新论》《产业化生存》。核心话题：斯坦尼体系中国传播史、数字时代表演新挑战、中国电影表演民族化。⚠️ 报考博导，必须精读其著作。' },
+
+  // 人类表演学
+  { module:'perform', q:'谢克纳"广义表演"的含义？', a:'表演不限于舞台，包括仪式、运动、日常生活、政治等。表演七大功能：娱乐、建构美与身份、标记或改变身份、建造社群、治愈、传授与说服、处理神圣与世俗。' },
+  { module:'perform', q:'"是/作为表演"(is/as performance)的区分？', a:'"是表演"(is performance)：事物本身就是表演（如戏剧演出、仪式）；"作为表演"(as performance)：用表演的视角去分析本不被视为表演的事物（如政治演讲、日常互动）。这个区分是人类表演学的方法论基石。' },
+  { module:'perform', q:'戈夫曼"戏剧论"的核心观点？', a:'厄文·戈夫曼提出日常生活中人人都在"表演"——前台（公开展示的自我）与后台（私密的真实自我）的区分。日常互动是一种"印象管理"。这为谢克纳的广义表演概念提供了社会学基础。' },
+
+  // 技术哲学
+  { module:'tech', q:'海德格尔"座架"(Gestell)的含义？', a:'现代技术的本质——一种强行把自然界和一切事物都看作"持存物"(Standing-Reserve)的方式。世界变成巨大的"资源库"。经典对比：风车顺应自然（风吹则转），水电站"座架"自然（强迫河流转化为电力储存）。' },
+  { module:'tech', q:'斯蒂格勒"技术化"的核心论点？', a:'人发明了技术，技术同时也发明了人。"谁"(Who/人)和"什么"(What/工具)是相互构成的。例：古人打磨燧石时，燧石被改变，但人的大脑皮层也被燧石改变。技术不是单纯的工具，而是人类自身的构成性要素。' },
+  { module:'tech', q:'海德格尔"此在"(Dasein)的三个结构？', a:'被抛性(Thrownness)——无法选择地被"抛"入特定历史和处境，对应表演中的"规定情境"；沉沦(Falling)——随波逐流的非本真状态，对应机械化表演；筹划(Projection)——面向未来的规划，对应"最高任务/贯穿动作"。' },
+  { module:'tech', q:'亚里士多德"四因论"是什么？', a:'质料因（由什么构成）、形式因（什么样子）、动力因（谁让它做成的）、目的因（为了什么而存在）。海德格尔"银圣杯"例：银子(质料)→杯形(形式)→银匠(动力)→献祭仪式(目的)。斯蒂格勒认为现代技术中，技术本身变成了目的。' },
+  { module:'tech', q:'"本有"(Ereignis)与"座架"的关系？', a:'本有是对抗座架的力量。座架将一切视为技术资源，本有则是人与存在相互认领的源头时刻。比喻：乐谱（存在）+演奏者（人）→音乐响起的瞬间就是本有——两者融合，让音乐显现。在表演中，它是回归有机天性、让情感自然流淌的状态。' },
+  { module:'tech', q:'海德格尔的"上手状态"与"在手状态"？', a:'上手状态(Ready-to-hand)：熟练使用工具时，工具与人融为一体，注意不到工具本身——如演员完全入戏；在手状态(Present-at-hand)：工具"坏了"才停下来把它当对象审视——如演员忘词、出戏。' },
+];
+
+// Quiz questions
+const quizzes = [
+  { module:'stan', q:'斯坦尼体系的第一哲学原则是什么？', opts:['有机天性原则','能动性与行动原则','通过有意识达到下意识','情感记忆原则'], correct:1, explain:'动作（行动）是表演艺术的第一元素和基础。斯坦尼原话："在舞台上需要动作。动作、活动——这就是戏剧艺术的基础。"' },
+  { module:'stan', q:'"假使"(Magic If)与规定情境的关系是？', opts:['"假使"是规定情境的一部分','"假使"提出假设，规定情境提供具体内容','两者完全独立','规定情境包含"假使"'], correct:1, explain:'"假使"是动词性的心理动作（"假如我……"），规定情境是名词性的条件集合。前者不能离开后者，后者不能没有前者。' },
+  { module:'stan', q:'斯坦尼认为演员在舞台上应该追求什么？', opts:['表演情感','展示技巧','执行行动','模仿生活'], correct:2, explain:'情感是行动的副产品，不是直接追求的目标。演员在舞台上的核心任务是"执行行动"而非"表演情感"。' },
+  { module:'stan', q:'斯坦尼晚期的重大理论突破是什么？', opts:['情感记忆法','形体动作方法','内心独白法','间离效果'], correct:1, explain:'形体动作方法主张从具体形体动作入手，在正确规定情境中执行，由此自然激发内在心理体验。从"由内到外"转向"由外到内"。' },
+  { module:'stan', q:'任务的命名规则必须用什么来命名？', opts:['名词','形容词','动词','感叹词'], correct:2, explain:'必须用动词命名（"说服他""阻止她"），不能用名词或形容词，因为只有动词才能激发行动。' },
+  { module:'stan', q:'"当众孤独"(Public Solitude)是什么的高级成果？', opts:['想象力训练','注意力训练','情感记忆训练','肌肉松弛训练'], correct:1, explain:'当众孤独意味着演员掌握了抵抗外界干扰的能力，是注意力集中训练的最高境界。' },
+
+  { module:'chekhov', q:'迈克尔·契诃夫方法中最核心的工具是？', opts:['情感记忆','心理姿态(PG)','重复练习','间离效果'], correct:1, explain:'心理姿态(Psychological Gesture)用一个全身性的肢体动作凝缩角色的内在意志，帮助演员快速进入角色。' },
+  { module:'chekhov', q:'契诃夫方法中"更高的自我"(Higher Self)对应斯坦尼的什么概念？', opts:['最高任务','情感记忆','下意识','规定情境'], correct:2, explain:'契诃夫的"更高的自我"与斯坦尼的"下意识"可以对比——都指向超越理性控制的创作状态，但路径不同。' },
+
+  { module:'method', q:'在方法派中，哪位传承人强调"想象力"而批判"情感记忆"？', opts:['李·斯特拉斯伯格','斯特拉·阿德勒','桑福德·迈斯纳','哈罗德·克勒曼'], correct:1, explain:'阿德勒认为强迫唤醒个人情感记忆有害，主张通过想象力进入角色的规定情境世界。' },
+  { module:'method', q:'迈斯纳的"重复练习"(Repetition Exercise)训练的核心能力是？', opts:['情感唤醒','对对手的真实反应','身体控制','想象力'], correct:1, explain:'重复练习训练演员真实地观察对手、从对手身上获得冲动、建立真实的即时反应。核心："活在对手的眼睛里"。' },
+
+  { module:'compare', q:'布莱希特的"间离效果"中文译名中，哪个最容易造成误解？', opts:['间离','陌生化','疏离','去熟悉化'], correct:2, explain:'"疏离"容易误导为冷漠，布莱希特反对这种理解。间离不是让演员冷冰冰站在舞台上，而是"展示"角色。' },
+  { module:'compare', q:'梅耶荷德生物力学中，情感(N)的位置是？', opts:['出发点','过程','结果','前提'], correct:2, explain:'N = A1 + A2。情感是意图(A1)和实现(A2)碰撞后的自然结果，不是预设的出发点。' },
+  { module:'compare', q:'布莱希特与斯坦尼在哪个层面解决不同问题？', opts:['斯坦尼关注演员与角色，布莱希特关注演员与观众','两者都关注演员与角色','两者都关注演员与观众','斯坦尼关注导演，布莱希特关注编剧'], correct:0, explain:'斯坦尼解决演员如何在假定情境中产生真实的有机生命；布莱希特解决演员如何引导观众用批判理性看待社会现实。' },
+  { module:'compare', q:'布莱希特有没有自己独立的演员训练方法？', opts:['有，完全独立于斯坦尼','没有，柏林剧团基础技术大量借鉴斯坦尼','有，以生物力学为基础','没有任何训练方法'], correct:1, explain:'布莱希特没有发明自己的演员训练体系。间离主要调整的是"演员与观众的关系"及"演员对角色的态度"，基本功训练借鉴斯坦尼。' },
+
+  { module:'china', q:'"十六字精华"中处理"自我与他者关系"的是哪四个字？', opts:['虚实结合','形神兼备','设身处地','似我非我'], correct:3, explain:'似我非我处理自我与他者的关系（存在论状态），是十六字精华中最精妙的一条。' },
+  { module:'china', q:'"设身处地"对应斯坦尼体系中的什么概念？', opts:['规定情境','Magic If（假使）','情感记忆','最高任务'], correct:1, explain:'设身处地与斯坦尼的"假使"精准对应："如果我处于这种情境，我会怎么做？"但比"假使"更含蓄，是整体性的"入乎其内"。' },
+
+  { module:'tech', q:'海德格尔用什么经典例子区分传统技术与现代技术？', opts:['锤子与电脑','风车与水电站','马车与汽车','书信与电话'], correct:1, explain:'风车顺应自然（风吹则转，风停则止），水电站强迫河流转化为"水压"再转化为"电力"储存——莱茵河从诗意景观变成"能源提供源"。' },
+  { module:'tech', q:'斯蒂格勒的"代具"概念是什么意思？', opts:['替代人类的机器','弥补人类不足与缺陷的技术工具','人类的义肢','自动化系统'], correct:1, explain:'代具(Prosthesis)是弥补人类不足与缺陷的工具。斯蒂格勒认为技术不是外在工具，而是构成人之为人的本质要素——没有技术，人这种生物根本不成立。' },
+  { module:'tech', q:'海德格尔"锤子"比喻中，"在手状态"对应表演中的什么情况？', opts:['完全入戏','忘词出戏','即兴表演','情感爆发'], correct:1, explain:'在手状态(Present-at-hand)：工具坏了才停下来审视——对应演员忘词、出戏的状态。上手状态对应完全入戏。' },
+
+  { module:'perform', q:'谢克纳将哪位社会学家的理论融入人类表演学？', opts:['马克思','韦伯','厄文·戈夫曼','布迪厄'], correct:2, explain:'戈夫曼的"戏剧论"——日常生活中人人都在"表演"，前台与后台的区分——为谢克纳的广义表演概念提供了社会学基础。' },
+  { module:'perform', q:'"环境戏剧"(Environmental Theatre)是谁提出的？', opts:['布莱希特','格洛托夫斯基','谢克纳','彼得·布鲁克'], correct:2, explain:'谢克纳提出环境戏剧理念，打破传统剧场的观演分离，让表演在环境中发生，观众成为环境的一部分。' },
+];
+
+// Essay prompts
+const essayPrompts = [
+  { module:'stan', title:'论述斯坦尼体系中"体验"与"体现"的辩证关系',
+    guide:'答题框架建议：\n1. 开头：界定"体验"与"体现"的概念（引用斯坦尼原话）\n2. 核心论证：\n   - 体验是基础：内部创作技术（假使→规定情境→想象→行动→交流）\n   - 体现是目的：外部技术（声音、形体、节奏、性格化）\n   - 辩证统一：没有体验的体现是空洞形式，没有体现的体验是私人感受\n3. 晚期发展：形体动作方法如何从"由外到内"重新统一了体验与体现\n4. 升华：结合中国表演理论"形神兼备"或你的数字表演研究方向\n\n关键术语：体验(Experiencing)、体现(Embodiment)、形体动作方法(Method of Physical Actions)、有机天性、最高任务、贯穿动作' },
+  { module:'stan', title:'斯坦尼体系的"行动分析法"如何指导演员的角色创造？',
+    guide:'答题框架建议：\n1. 行动分析法的核心命题：行动是表演的第一元素\n2. 角色创造三阶段中行动分析的运用：\n   - 认识时期：从剧本中提取事件链和行动线\n   - 体验时期：通过"假使"和规定情境在行动中"活"起来\n   - 体现时期：行动通过外部手段传达\n3. 单元与任务的分析方法：动词命名法、三要素（做什么/为什么/怎样做）\n4. 最高任务与贯穿动作如何统领所有行动\n5. 可结合实例（某部作品中的具体角色分析）' },
+  { module:'compare', title:'比较"三大表演体系"的哲学基础与美学追求',
+    guide:'答题框架建议：\n1. 分别阐述三大体系的哲学基础：\n   - 斯坦尼：有机天性哲学，追求舞台上的真实生命\n   - 布莱希特：马克思主义辩证法，追求观众的理性觉醒\n   - 中国戏曲：中国传统美学（虚实结合），追求程式化的意象美\n2. 四个比较维度：演员与角色、观众关系、表演本质、训练方法\n3. 辩证认识：三者不是简单对立而是互补\n   - 布莱希特实际借鉴斯坦尼基础训练\n   - 中国戏曲"似我非我"超越斯坦尼/布莱希特二元对立\n4. 当代启示：数字时代是否需要新的表演体系？' },
+  { module:'compare', title:'斯坦尼与布莱希特在"演员与角色关系"问题上的根本分歧',
+    guide:'答题框架建议：\n1. 斯坦尼的立场：演员"化身"为角色（从自我出发→体验→角色从自身生长出来）\n2. 布莱希特的立场：演员"展示"角色（双重形象：劳顿没有在伽利略中消失）\n3. "街头事故目击者"比喻 vs "魔术般的假使"\n4. 三个常见误解的纠正：\n   - 布莱希特并非反对一切情感\n   - 布莱希特没有独立的演员训练方法\n   - 间离≠冷漠\n5. 深层分析：两人解决不同层面的问题\n6. 可结合中国戏曲"似我非我"作为第三路径' },
+  { module:'china', title:'中国戏曲表演对世界表演理论的独特贡献',
+    guide:'答题框架建议：\n1. "十六字精华"作为理论框架\n2. 虚实结合：以"无"创造"有"——马鞭代千军，圆场行万里\n3. 形神兼备：超越"由内到外"vs"由外到内"的二元对立\n4. 设身处地 vs Magic If：东西方进入角色的不同路径\n5. 似我非我：对斯坦尼（完全化身）与布莱希特（完全间离）的第三路径\n6. 国际影响：布莱希特1936年对中国戏曲的赞赏\n7. 当代价值：赵宁宇"中体西用"的理论视野' },
+  { module:'tech', title:'海德格尔"座架"概念对理解数字表演技术的启示',
+    guide:'答题框架建议：\n1. 座架(Gestell)概念阐释：现代技术将一切视为"持存物"\n2. 经典案例：风车vs水电站\n3. 数字表演中的"座架"效应：\n   - 动捕技术将身体分解为数据点\n   - 演员从"此刻发生的艺术"变为"可存储的数字资产"\n4. 反思：如何避免演员在技术中沦为数据源？\n5. "本有"(Ereignis)作为救赎可能：回归有机天性\n6. 斯蒂格勒的补充：技术化过程中"谁"与"什么"的相互构成' },
+  { module:'perform', title:'谢克纳"人类表演学"如何拓展了表演的边界？',
+    guide:'答题框架建议：\n1. 从狭义表演到广义表演(Broad Spectrum Performance)\n2. 表演的七大功能\n3. "是/作为表演"(is/as performance)的方法论区分\n4. 仪式与戏剧的连续统\n5. 社会表演学（戈夫曼）的引入\n6. 对传统表演理论的挑战：表演不再只是剧场里的事\n7. 与你的研究接口：AI生成内容作为新的"文化表演"形态' },
+  { module:'chekhov', title:'迈克尔·契诃夫方法与斯坦尼体系的继承与分歧',
+    guide:'答题框架建议：\n1. 历史渊源：契诃夫是斯坦尼的学生，被称为"最杰出的弟子"\n2. 继承：都追求演员的有机创作，都重视想象力\n3. 分歧：\n   - 斯坦尼"情感记忆" vs 契诃夫"想象力"\n   - 斯坦尼"下意识" vs 契诃夫"更高的自我"\n   - 契诃夫更强调身体的心理表现力（心理姿态PG）\n4. "心理姿态"如何帮助演员快速进入角色\n5. 四兄弟（轻松、形式、美、整体）的美学追求\n6. 契诃夫方法作为区分你与其他考生的差异化知识点' },
+];
+
+// ============ STATE ============
+let currentTab = 'quiz';
+let activeModules = new Set(MODULES.map(m => m.id));
+let flashIdx = 0;
+let flipped = false;
+let quizIdx = 0;
+
+// Persistent state
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('phd_review_state') || '{}');
+    return {
+      flashMastered: new Set(s.flashMastered || []),
+      flashLearning: new Set(s.flashLearning || []),
+      quizCorrect: new Set(s.quizCorrect || []),
+      quizWrong: new Set(s.quizWrong || []),
+      essayDrafts: s.essayDrafts || {},
+      totalSessions: (s.totalSessions || 0) + 1,
+    };
+  } catch(e) { return { flashMastered: new Set(), flashLearning: new Set(), quizCorrect: new Set(), quizWrong: new Set(), essayDrafts: {}, totalSessions: 1 }; }
+}
+function saveState() {
+  const s = {
+    flashMastered: [...state.flashMastered],
+    flashLearning: [...state.flashLearning],
+    quizCorrect: [...state.quizCorrect],
+    quizWrong: [...state.quizWrong],
+    essayDrafts: state.essayDrafts,
+    totalSessions: state.totalSessions,
+  };
+  localStorage.setItem('phd_review_state', JSON.stringify(s));
+}
+const state = loadState();
+
+// ============ HELPERS ============
+function filtered(arr) {
+  return arr.filter(item => activeModules.has(item.module));
+}
+function shuffleArray(arr) {
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+let shuffledFlash = shuffleArray(filtered(flashcards));
+let shuffledQuiz = shuffleArray(filtered(quizzes));
+
+function refreshShuffled() {
+  shuffledFlash = shuffleArray(filtered(flashcards));
+  shuffledQuiz = shuffleArray(filtered(quizzes));
+  flashIdx = 0;
+  quizIdx = 0;
+}
+
+// ============ RENDER ============
+function renderStats() {
+  const total = flashcards.length + quizzes.length;
+  const mastered = state.flashMastered.size + state.quizCorrect.size;
+  const pct = total > 0 ? Math.round(mastered / total * 100) : 0;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-chip">已掌握 <span class="num">${mastered}/${total}</span></div>
+    <div class="stat-chip">闪卡 <span class="num">${state.flashMastered.size}/${flashcards.length}</span></div>
+    <div class="stat-chip">问答 <span class="num">${state.quizCorrect.size}/${quizzes.length}</span></div>
+    <div class="stat-chip">复习 <span class="num">#${state.totalSessions}</span></div>
+  `;
+}
+
+function renderModuleFilter() {
+  document.getElementById('moduleFilter').innerHTML = MODULES.map(m =>
+    `<button class="mod-btn ${activeModules.has(m.id)?'active':''}" onclick="toggleModule('${m.id}')">${m.short}</button>`
+  ).join('');
+}
+
+function toggleModule(id) {
+  if(activeModules.has(id)) {
+    if(activeModules.size > 1) activeModules.delete(id);
+  } else {
+    activeModules.add(id);
+  }
+  renderModuleFilter();
+  refreshShuffled();
+  renderCurrentPanel();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['quiz','flash','write','progress'][i] === tab);
+  });
+  ['quiz','flash','write','progress'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('hidden', t !== tab);
+  });
+  renderCurrentPanel();
+}
+
+function renderCurrentPanel() {
+  if(currentTab === 'quiz') renderQuiz();
+  else if(currentTab === 'flash') renderFlash();
+  else if(currentTab === 'write') renderWrite();
+  else if(currentTab === 'progress') renderProgress();
+}
+
+// ---- Quiz ----
+function renderQuiz() {
+  const items = shuffledQuiz;
+  if(items.length === 0) { document.getElementById('panel-quiz').innerHTML = '<div class="card"><p>请选择至少一个模块</p></div>'; return; }
+  if(quizIdx >= items.length) quizIdx = 0;
+  const q = items[quizIdx];
+  const qKey = q.q;
+  const modInfo = MODULES.find(m=>m.id===q.module);
+
+  document.getElementById('panel-quiz').innerHTML = `
+    <div class="card">
+      <div class="card-label">${modInfo.name} · ${quizIdx+1}/${items.length}</div>
+      <h3>${q.q}</h3>
+      <div class="quiz-options" id="quizOpts">
+        ${q.opts.map((o,i) => `<button class="quiz-opt" onclick="answerQuiz(${i},${q.correct},'${encodeURIComponent(qKey)}')">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+      </div>
+      <div class="answer-box" id="quizExplain">
+        <h4>解析</h4>
+        <p>${q.explain}</p>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-outline btn-small" onclick="quizIdx--;if(quizIdx<0)quizIdx=items.length-1;renderQuiz()">上一题</button>
+        <button class="btn btn-primary btn-small" onclick="quizIdx++;renderQuiz()">下一题</button>
+        <button class="btn btn-outline btn-small" onclick="shuffledQuiz=shuffleArray(filtered(quizzes));quizIdx=0;renderQuiz()">随机</button>
+      </div>
+    </div>
+  `;
+}
+
+function answerQuiz(selected, correct, qKeyEncoded) {
+  const qKey = decodeURIComponent(qKeyEncoded);
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach((o,i) => {
+    o.classList.add('disabled');
+    if(i === correct) o.classList.add('correct');
+    if(i === selected && selected !== correct) o.classList.add('wrong');
+  });
+  document.getElementById('quizExplain').classList.add('show');
+  if(selected === correct) {
+    state.quizCorrect.add(qKey);
+    state.quizWrong.delete(qKey);
+  } else {
+    state.quizWrong.add(qKey);
+  }
+  saveState();
+  renderStats();
+}
+
+// ---- Flashcard ----
+function renderFlash() {
+  const items = shuffledFlash;
+  if(items.length === 0) { document.getElementById('panel-flash').innerHTML = '<div class="card"><p>请选择至少一个模块</p></div>'; return; }
+  if(flashIdx >= items.length) flashIdx = 0;
+  if(flashIdx < 0) flashIdx = items.length - 1;
+  const c = items[flashIdx];
+  flipped = false;
+  const modInfo = MODULES.find(m=>m.id===c.module);
+  const fKey = c.q;
+  const isMastered = state.flashMastered.has(fKey);
+
+  document.getElementById('panel-flash').innerHTML = `
+    <div class="flashcard-container">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="flashcard-front">
+          <div class="card-label">${modInfo.name}</div>
+          <h3>${c.q}</h3>
+          <div class="hint">点击翻转查看答案</div>
+        </div>
+        <div class="flashcard-back">
+          <div class="concept-tag">${modInfo.name}</div>
+          <p>${c.a}</p>
+        </div>
+      </div>
+    </div>
+    <div class="flashcard-nav">
+      <button class="btn btn-outline btn-small" onclick="flashIdx--;renderFlash()">上一张</button>
+      <span class="flashcard-counter">${flashIdx+1} / ${items.length}</span>
+      <button class="btn btn-outline btn-small" onclick="flashIdx++;renderFlash()">下一张</button>
+    </div>
+    <div class="rating-btns" style="margin-top:10px">
+      <button class="rate-btn rate-bad" onclick="rateFlash('${encodeURIComponent(fKey)}','bad')">不熟</button>
+      <button class="rate-btn rate-ok" onclick="rateFlash('${encodeURIComponent(fKey)}','ok')">模糊</button>
+      <button class="rate-btn rate-good" onclick="rateFlash('${encodeURIComponent(fKey)}','good')">掌握${isMastered?' ✓':''}</button>
+    </div>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-outline btn-small" onclick="shuffledFlash=shuffleArray(filtered(flashcards));flashIdx=0;renderFlash()">随机重排</button>
+    </div>
+  `;
+}
+
+function flipCard() {
+  document.getElementById('flashcard').classList.toggle('flipped');
+  flipped = !flipped;
+}
+
+function rateFlash(keyEncoded, rating) {
+  const key = decodeURIComponent(keyEncoded);
+  if(rating === 'good') {
+    state.flashMastered.add(key);
+    state.flashLearning.delete(key);
+  } else if(rating === 'ok') {
+    state.flashLearning.add(key);
+    state.flashMastered.delete(key);
+  } else {
+    state.flashMastered.delete(key);
+    state.flashLearning.delete(key);
+  }
+  saveState();
+  renderStats();
+  flashIdx++;
+  renderFlash();
+}
+
+// ---- Write ----
+function renderWrite() {
+  const items = filtered(essayPrompts);
+  document.getElementById('panel-write').innerHTML = items.map((p,i) => {
+    const modInfo = MODULES.find(m=>m.id===p.module);
+    const draft = state.essayDrafts[p.title] || '';
+    return `
+      <div class="writing-prompt">
+        <div class="card-label">${modInfo.name}</div>
+        <h3>${p.title}</h3>
+        <div class="btn-row">
+          <button class="btn btn-outline btn-small" onclick="toggleGuide(${i})">查看答题指导</button>
+        </div>
+        <div class="guide-box" id="guide-${i}">
+          <h4>答题框架与关键术语</h4>
+          <p style="white-space:pre-wrap">${p.guide}</p>
+        </div>
+        <textarea class="writing-area" id="draft-${i}" placeholder="在此写下你的答案草稿……" oninput="saveDraft('${encodeURIComponent(p.title)}',this.value)">${draft}</textarea>
+        <div style="text-align:right;color:var(--text2);font-size:0.75em" id="wc-${i}">${draft.length} 字</div>
+      </div>
+    `;
+  }).join('') || '<div class="card"><p>请选择至少一个模块</p></div>';
+}
+
+function toggleGuide(i) {
+  document.getElementById('guide-'+i).classList.toggle('show');
+}
+
+function saveDraft(titleEncoded, text) {
+  const title = decodeURIComponent(titleEncoded);
+  state.essayDrafts[title] = text;
+  saveState();
+  // Update word count
+  const items = filtered(essayPrompts);
+  const idx = items.findIndex(p => encodeURIComponent(p.title) === titleEncoded);
+  if(idx >= 0) {
+    const wcEl = document.getElementById('wc-'+idx);
+    if(wcEl) wcEl.textContent = text.length + ' 字';
+  }
+}
+
+// ---- Progress ----
+function renderProgress() {
+  const panel = document.getElementById('panel-progress');
+  let html = '';
+
+  // Overall
+  const total = flashcards.length + quizzes.length;
+  const mastered = state.flashMastered.size + state.quizCorrect.size;
+  const pct = total > 0 ? Math.round(mastered / total * 100) : 0;
+  html += `
+    <div class="progress-ring" style="--pct:${pct}%">
+      <div class="ring-visual"><div class="ring-inner">${pct}%</div></div>
+      <div>
+        <div style="font-weight:600">总体进度</div>
+        <div style="color:var(--text2);font-size:0.8em">已掌握 ${mastered} / ${total} 个知识点</div>
+      </div>
+    </div>
+  `;
+
+  // Per module
+  MODULES.forEach(m => {
+    const mFlash = flashcards.filter(f=>f.module===m.id);
+    const mQuiz = quizzes.filter(q=>q.module===m.id);
+    const mTotal = mFlash.length + mQuiz.length;
+    const mMastered = mFlash.filter(f=>state.flashMastered.has(f.q)).length + mQuiz.filter(q=>state.quizCorrect.has(q.q)).length;
+    const mPct = mTotal > 0 ? Math.round(mMastered / mTotal * 100) : 0;
+    html += `
+      <div class="progress-ring" style="--pct:${mPct}%">
+        <div class="ring-visual"><div class="ring-inner">${mPct}%</div></div>
+        <div>
+          <div style="font-weight:600">${m.name}</div>
+          <div style="color:var(--text2);font-size:0.8em">闪卡 ${mFlash.filter(f=>state.flashMastered.has(f.q)).length}/${mFlash.length} · 问答 ${mQuiz.filter(q=>state.quizCorrect.has(q.q)).length}/${mQuiz.length}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  // Reset button
+  html += `
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-outline btn-small" onclick="if(confirm('确认重置所有进度？')){localStorage.removeItem('phd_review_state');location.reload();}">重置进度</button>
+    </div>
+  `;
+  panel.innerHTML = html;
+}
+
+// ============ INIT ============
+renderStats();
+renderModuleFilter();
+renderQuiz();
+</script>
+</body>
+</html>
