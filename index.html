@@ -280,12 +280,123 @@ body {
 }
 .ring-inner { width: 42px; height: 42px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 0.85em; font-weight: 700; color: var(--text); }
 
+/* Glossary */
+.glossary-search {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 1em;
+  font-family: var(--font);
+  margin-bottom: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.glossary-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,100,66,0.1); }
+.glossary-cat-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.glossary-cat-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 0.86em;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.glossary-cat-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); font-weight: 500; }
+.glossary-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: all 0.2s;
+}
+.glossary-header {
+  padding: 18px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.glossary-header:hover { background: var(--bg2); }
+.glossary-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.glossary-term {
+  font-weight: 600;
+  font-size: 1.05em;
+  color: var(--text);
+  flex: 1;
+}
+.glossary-term-en {
+  color: var(--text3);
+  font-size: 0.88em;
+  font-weight: 400;
+  margin-left: 6px;
+}
+.glossary-school {
+  font-size: 0.78em;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.glossary-arrow {
+  color: var(--text3);
+  transition: transform 0.2s;
+  font-size: 0.9em;
+}
+.glossary-item.open .glossary-arrow { transform: rotate(90deg); }
+.glossary-body {
+  display: none;
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.glossary-item.open .glossary-body { display: block; animation: fadeIn 0.25s; }
+.glossary-def {
+  font-size: 0.98em;
+  line-height: 1.85;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.glossary-note {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 0.92em;
+  line-height: 1.75;
+  color: var(--text2);
+}
+.glossary-note-label {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.82em;
+  margin-bottom: 4px;
+}
+.glossary-count {
+  text-align: center;
+  color: var(--text3);
+  font-size: 0.88em;
+  padding: 10px 0;
+}
+
 /* Hidden */
 .hidden { display: none; }
 
 /* Responsive */
 @media (max-width: 400px) {
-  .tab { font-size: 0.88em; padding: 10px 6px; }
+  .tab { font-size: 0.82em; padding: 10px 4px; }
   .card { padding: 20px; }
 }
 
@@ -336,6 +447,7 @@ body {
   <div class="tab-bar">
     <button class="tab active" onclick="switchTab('quiz')">问答</button>
     <button class="tab" onclick="switchTab('flash')">闪卡</button>
+    <button class="tab" onclick="switchTab('glossary')">词典</button>
     <button class="tab" onclick="switchTab('write')">论述</button>
     <button class="tab" onclick="switchTab('progress')">进度</button>
   </div>
@@ -346,6 +458,8 @@ body {
   <div id="panel-quiz"></div>
   <!-- Flash Panel -->
   <div id="panel-flash" class="hidden"></div>
+  <!-- Glossary Panel -->
+  <div id="panel-glossary" class="hidden"></div>
   <!-- Write Panel -->
   <div id="panel-write" class="hidden"></div>
   <!-- Progress Panel -->
@@ -534,6 +648,108 @@ const essayPrompts = [
     guide:'答题框架建议：\n1. 第一条轴线：身体-心理关系（"由内而外"vs"由外而内"）\n   - 极端"由内而外"：斯坦尼早期、斯特拉斯伯格\n   - 极端"由外而内"：梅耶荷德、铃木\n   - 辩证综合：契诃夫心理姿态、格洛托夫斯基、斯坦尼晚期、梅斯纳\n2. 第二条轴线：演员-角色关系（"融入"vs"间离"）\n   - 最大融入：斯坦尼、方法派\n   - 评论性距离：布莱希特\n   - 超越二分：格洛托夫斯基"完全奉献行动"\n3. 数字表演的追问：这两条轴线在技术中介后如何重构？\n\n关键术语：体验/展示、融入/间离、有机性/精确性、临在/中介' },
 ];
 
+// Glossary data — precise definitions
+const GLOSSARY_CATS = [
+  { id:'all', name:'全部' },
+  { id:'stan', name:'斯坦尼体系' },
+  { id:'chekhov', name:'契诃夫方法' },
+  { id:'method', name:'方法派' },
+  { id:'brecht', name:'布莱希特' },
+  { id:'meyerhold', name:'梅耶荷德' },
+  { id:'grotowski', name:'格洛托夫斯基' },
+  { id:'suzuki', name:'铃木忠志' },
+  { id:'barba', name:'巴尔巴' },
+  { id:'china', name:'中国表演理论' },
+  { id:'perform', name:'人类表演学' },
+  { id:'tech', name:'技术哲学' },
+];
+
+const glossary = [
+  // ===== 斯坦尼体系 =====
+  { cat:'stan', term:'规定情境', en:'Given Circumstances', def:'角色所处的全部客观条件的总和。包括：剧本的故事情节、时代背景、时间地点、生活环境、导演和演员对剧本的理解、舞美灯光音响等。规定情境不是固定不变的——排练过程中不断丰富和具体化。', note:'与"假使"的关系：假使提出假设（"假如我处于……"），规定情境提供假设的具体内容。二者缺一不可。' },
+  { cat:'stan', term:'魔术般的假使', en:'Magic If', def:'演员创造活动的起点和激发器。通过自问"假如我处在角色的情境中，我会怎么做？"来启动有机的内心创作过程。它不强迫演员相信舞台上的一切是真的，而是通过假设激发想象力和行动的冲动。', note:'斯坦尼原话："假使是创作的杠杆，把演员从现实转移到能够进行创作的另一世界中去。"' },
+  { cat:'stan', term:'最高任务', en:'Super-Objective / Super-Task', def:'全剧追求的终极精神目标，是剧本和角色存在的根本意义所在。它像指南针一样统领角色的一切行动和体验。所有单元任务和贯穿动作都指向最高任务。', note:'比喻：最高任务是天花板/灯塔，贯穿动作是通向它的道路，单元任务是路上的台阶。命名必须用能激发演员创作热情的动词形式。' },
+  { cat:'stan', term:'贯穿动作', en:'Through-Line of Action', def:'角色为实现最高任务而执行的贯穿全剧的不间断意志行动线。它像脊椎一样支撑整个角色，将散落的单元任务串联为有机整体。', note:'比喻：散落的珍珠（单元任务）被一根线（贯穿动作）穿起来，指向最高任务。贯穿动作是角色的"脊椎"。' },
+  { cat:'stan', term:'单元与任务', en:'Units and Objectives', def:'将剧本按事件切分为若干"单元"，每个单元中角色有一个具体的"任务"（目标）。任务的命名规则：必须用动词（"说服他""阻止她"），不能用名词或形容词，因为只有动词才能激发行动。', note:'任务三要素：做什么（任务本身）、为什么做（内在动机）、怎样做（适应方式）。' },
+  { cat:'stan', term:'潜台词', en:'Subtext', def:'隐藏在台词文字背后的、未说出口的真实含义和心理动机。角色说的话（文本）和角色想的事（潜台词）往往不一致甚至相反。潜台词是角色内心生活的真正载体。', note:'斯坦尼："观众来到剧院不是为了听文字，而是为了看文字后面的东西。"' },
+  { cat:'stan', term:'交流与适应', en:'Communion and Adaptation', def:'交流：演员与对手之间真实的精神能量往来——发出（辐射）和接收（吸收）。适应：为达到目的而调整与对手交流的方式方法。真实的交流是体验派表演的核心标志。', note:'交流三条线：与对手的交流、与自我的交流（内心独白）、与观众的间接交流（通过"第四面墙"）。' },
+  { cat:'stan', term:'情感记忆', en:'Emotion Memory / Affective Memory', def:'演员调动自己过去经历中的真实情感体验，用以丰富角色的情感生活。两条唤起路径：1）从情感到刺激物；2）从刺激物到情感（回忆具体感官细节唤醒关联情感）。', note:'重要：斯坦尼晚年大幅弱化了对情感记忆的依赖，转向"形体动作方法"。方法派三大传承人对情感记忆态度分歧严重。' },
+  { cat:'stan', term:'形体动作方法', en:'Method of Physical Actions', def:'斯坦尼晚年最重大的理论突破。核心逻辑：从具体的形体动作入手，在正确的规定情境中执行，由此自然激发内在心理体验。实现了从早期"由内到外"到晚期"由外到内"的根本转向。', note:'形体动作的"小小真实"能带来体验的"大真实"。这一方法对后世影响深远——格洛托夫斯基、巴尔巴等均从此发展。' },
+  { cat:'stan', term:'内在驱动力', en:'Inner Motive Forces', def:'推动角色行动的三大内在力量：智慧（理性分析）、意志（追求目标、克服障碍）、情感（对情境的真实感受）。三者必须协调运作。', note:'只有理智则冰冷，只有情感则无方向，只有意志则盲目。健全的创作需要三者有机统一。' },
+  { cat:'stan', term:'注意力集中', en:'Concentration of Attention', def:'演员在舞台上将注意力集中于特定对象的能力。分为三个"圈"：小圈（自身或手中物件）、中圈（对手和局部空间）、大圈（整个舞台乃至观众席）。', note:'训练终极目标：实现"当众孤独"（Public Solitude）——在众目睽睽下保持完全的注意力集中，如同独处。' },
+  { cat:'stan', term:'肌肉松弛 / 肌肉监督员', en:'Muscular Release / Muscular Controller', def:'"肌肉监督员"是一种始终在后台运行的内部监控意识，随时发现并消除多余的肌肉紧张。松弛不是目的而是条件——身体松弛了，情感和动作才能自由流动。', note:'与注意力集中互为表里——紧张的肌肉会锁死情感通道，分散注意力。' },
+  { cat:'stan', term:'有机天性', en:'Organic Nature', def:'斯坦尼体系的第二哲学原则。表演必须遵循人的自然生命规律，不违背人体和心灵的有机运作方式。一切技术训练的目的是回归和释放有机天性，而非强加人为模式。', note:'与第三原则"通过有意识达到下意识"互为因果：系统训练（有意识）为有机天性的自由流露（下意识）铺路。' },
+  { cat:'stan', term:'体验与体现', en:'Experiencing and Embodiment', def:'体验(Perezhivanie)：演员在角色的规定情境中产生真实的内心感受和心理过程。体现：将内部体验通过声音、形体、节奏等外部手段传达给观众。体验是基础，体现是目的。', note:'辩证关系：没有体验的体现是空洞形式主义，没有体现的体验是私人感受无法传达。' },
+
+  // ===== 契诃夫方法 =====
+  { cat:'chekhov', term:'心理姿态', en:'Psychological Gesture (PG)', def:'用一个全身性的、夸张化的肢体动作来凝缩角色的全部内在意志、情感和欲望。是契诃夫方法最核心的工具。演员先以外化、放大的方式做出PG，再逐步内化——外在动作缩小但内在质感保留。', note:'与斯坦尼"形体动作方法"的区别：PG不需要是写实的、可在舞台上执行的动作，它是象征性的、心理性的身体形式。' },
+  { cat:'chekhov', term:'想象身体', en:'Imaginary Body', def:'演员想象自己拥有一个与自身不同的身体（更高/矮/胖、不同重心、不同行走节奏），然后"穿上"这个想象的身体。一次性同时改变外在（身体使用方式）和内在（心理感受）。', note:'对影视表演特别有价值——没有长期排练时间时，想象身体帮助演员快速获得角色的整体存在方式。' },
+  { cat:'chekhov', term:'四兄弟', en:'Four Brothers', def:'演员创作的四个基本品质：轻松感(Ease)、形式感(Form)、美感(Beauty)、整体感(Entirety)。四者共同构成契诃夫方法追求的表演美学标准。', note:'与斯坦尼追求的"真实/有机"不同，契诃夫更强调艺术性和美学完整性。' },
+  { cat:'chekhov', term:'辐射与接收', en:'Radiation and Receiving', def:'演员通过身体向外投射内在能量（辐射），同时接收外部环境和对手的能量（接收）。这是表演交流的能量基础，超越了语言和动作层面的交流。', note:'辐射不是"表演给观众看"，而是内在状态的自然外溢——真实充盈的内在自然会向外辐射。' },
+  { cat:'chekhov', term:'气氛', en:'Atmosphere', def:'空间中弥漫的整体情感质地。气氛不是由布景或灯光创造的，而是演员通过内在想象和外在行动共同营造的。在契诃夫体系中，气氛先于个人情感存在——演员进入气氛，气氛唤起情感。', note:'与斯坦尼"规定情境"的区别：规定情境是理性分析的条件集合，气氛是直觉感受到的空间情感质地。' },
+  { cat:'chekhov', term:'运动品质', en:'Qualities of Movement', def:'四种核心品质：塑造(Molding)——雕塑般清晰有力；飘浮(Floating)——轻盈而不确定；飞翔(Flying)——自由扩展解放；辐射(Radiating)——向外发散能量。', note:'演员通过给动作赋予不同品质，快速改变身心状态，无需依赖情感记忆或心理分析。' },
+  { cat:'chekhov', term:'接受性想象力', en:'Receptive Imagination', def:'在契诃夫体系中，想象力不是演员主动"制造"的——图像和角色仿佛有独立生命，演员的任务是向它们敞开自己，让它们"来找自己"。区别于主动的幻想(Fantasy)。', note:'相关概念"创造性个体"(Creative Individuality)：每个演员内部有一个超越日常人格的"更高自我"，是演员与角色之间的桥梁。' },
+
+  // ===== 方法派 =====
+  { cat:'method', term:'感官记忆', en:'Sense Memory', def:'斯特拉斯伯格方法派的核心练习。重建过去经历的具体感官细节（温度、气味、触感、声音、视觉）而非情节本身，通过感官通道唤醒相关情感。', note:'与斯坦尼"情感记忆"的区别：斯特拉斯伯格更系统化、更依赖个人心理经历，且将其作为核心方法而非辅助手段。' },
+  { cat:'method', term:'重复练习', en:'Repetition Exercise', def:'迈斯纳发明的核心训练。两名演员面对面，一人描述对方的行为或状态，另一人重复。通过反复练习训练：真实观察对手、从对手获得冲动而非自我内部制造、建立真实即时反应。', note:'核心理念："活在对手的眼睛里。"表演的基础是对对手的真实反应，不是自我内部的情感制造。' },
+  { cat:'method', term:'私密时刻练习', en:'Private Moment Exercise', def:'斯特拉斯伯格设计的练习。演员在公开场合进行通常独处时才做的私密行为（唱歌、跳舞、自言自语等），训练在公众面前保持私密状态的真实感。', note:'目的不是"展示隐私"，而是打破"被观看"带来的表演化倾向，找到真正的"当众孤独"。' },
+  { cat:'method', term:'想象力方法（阿德勒）', en:'Imagination Technique (Adler)', def:'阿德勒主张演员不需挖掘个人创伤——需要丰富想象力进入角色的规定情境世界。扮演失去孩子的母亲→不回忆自己的丧亲经历，而是具体想象角色世界的每个细节。', note:'阿德勒是唯一直接跟随晚年斯坦尼学习的美国教师（1934巴黎），她证实斯坦尼本人已放弃情感记忆。' },
+
+  // ===== 布莱希特 =====
+  { cat:'brecht', term:'间离效果', en:'Verfremdungseffekt / V-Effect', def:'通过艺术手段使本来熟悉的事物变得"陌生"和"令人惊异"，打破观众的思维惰性，迫使其重新审视被习以为常的社会关系和权力结构。', note:'间离 ≠ 疏离/冷漠。布莱希特不反对一切情感，反对的是情感替代思考。目的是让观众"带着大脑走进剧场"。' },
+  { cat:'brecht', term:'社会姿态', en:'Gestus', def:'一种社会编码的身体-态度形式，将权力关系结晶为可被感知的身体形式。不是普通手势(Gesture)，而是凝缩了社会关系的身体表达——每个Gestus都揭示人物的社会位置和阶级关系。', note:'例：老板递给工人一支烟的姿态(Gestus)与朋友之间递烟完全不同——同一动作，不同社会关系。' },
+  { cat:'brecht', term:'史诗剧场', en:'Epic Theatre', def:'与亚里士多德式"戏剧剧场"对立的戏剧形式。戏剧剧场追求观众的情感共鸣和认同；史诗剧场追求观众的理性思考和批判意识。叙事代替再现，展示代替化身，论点代替情节。', note:'布莱希特自己后来更倾向"辩证剧场"(Dialectical Theatre)这一名称，强调矛盾和变化而非单纯叙事。' },
+  { cat:'brecht', term:'街头事故目击者', en:'Street Scene', def:'布莱希特的经典比喻。一个人在街头向围观者描述他目睹的车祸——他会模仿司机和行人的动作，但不试图"变成"他们，始终是"展示者"，且展示带有明确目的（证明谁有过错）。', note:'这就是布莱希特要求的演员状态：不是"我是哈姆雷特"，而是"我向你展示哈姆雷特做了什么"。' },
+
+  // ===== 梅耶荷德 =====
+  { cat:'meyerhold', term:'生物力学', en:'Biomechanics', def:'梅耶荷德创立的演员训练体系。核心公式：N = A1 + A2。A1=意图（构思），A2=实现（体现），N=反应（自然涌现的情感）。情感不是出发点而是结果——先正确行动，情感随之而来。', note:'与斯坦尼晚期"形体动作方法"高度一致——都认为从身体行动入手比从心理状态入手更有效。' },
+  { cat:'meyerhold', term:'动作三阶段', en:'Otkaz-Posyl-Tochka', def:'制动(Otkaz)：先向相反方向做预备动作，为动作蓄力；发送(Posyl)：释放能量，执行明确行动；定位(Tochka)：动作终点的短暂静止和控制。', note:'与中国戏曲"起、行、收"惊人相似。这种结构使每个动作都具有节奏感、力量感和清晰的可读性。' },
+
+  // ===== 格洛托夫斯基 =====
+  { cat:'grotowski', term:'质朴戏剧', en:'Poor Theatre', def:'追问"戏剧不可缺少的最低限度是什么"，答案是演员与观众之间活生生的交流。系统剥除布景、灯光、服装、化妆、音响，将戏剧还原为演员身体与观众共在的本质状态。', note:'质朴戏剧不是贫穷/简陋的戏剧，而是通过减法抵达本质的哲学立场——与布鲁克"空的空间"呼应。' },
+  { cat:'grotowski', term:'否定之路', en:'Via Negativa', def:'格洛托夫斯基的核心方法论。不教演员如何"做"（加法），而是帮演员消除阻碍有机反应涌现的障碍（减法）：社会化姿态习惯、防御性肌肉紧张、表演套路化反应、情感自我审查。', note:'与斯坦尼的根本分歧：斯坦尼问"我怎样才能做到？"（加法路径），格洛托夫斯基问"什么阻碍了我？"（减法路径）。' },
+  { cat:'grotowski', term:'神圣演员', en:'Holy Actor', def:'不是在"表演角色"，而是进行彻底的自我揭示——如同宗教献祭，将最隐秘、最脆弱的内在袒露给观众。与之对立的是"妓女演员"(Courtesan Actor)——出卖表演技巧取悦观众。', note:'理想状态是conjunctio oppositorum（对立统一）——即兴与精确同时存在，自发性与结构性互不排斥。' },
+  { cat:'grotowski', term:'完全奉献行动', en:'Total Act', def:'动用全部身心资源，实现内在的彻底透明。演员在表演中不保留任何东西，达到完全的自我给予状态。这是格洛托夫斯基对"神圣演员"的实践要求。', note:'这不是"用力表演"，恰恰相反——是拆除所有防御之后，生命力的自然涌出。' },
+  { cat:'grotowski', term:'艺乘', en:'Art as Vehicle', def:'格洛托夫斯基最后也最成熟的研究阶段（1986-1999）。借用葛吉夫术语，将表演艺术比喻为内在修行的"载具"。表演不面向任何外部观众，唯一目的是行动者自身意识状态的精密转化。', note:'核心工具是"古老歌唱"——来自非洲-加勒比传统的仪式性歌曲。继承人：托马斯·理查兹。' },
+  { cat:'grotowski', term:'身体记谱', en:'Score (Physical Score)', def:'每个动作的轨迹、节奏、力度都严格固定的身体行动序列。精确性是前提，但结构内部必须保持活生生的有机反应。', note:'格洛托夫斯基的比喻："生命之流在细节之河中流淌"——河道（记谱）是固定的，水流（生命力）是鲜活的。' },
+
+  // ===== 铃木忠志 =====
+  { cat:'suzuki', term:'脚的语法', en:'Grammar of the Feet', def:'铃木方法最鲜明的特征。现代生活（坐椅子、穿鞋、乘车）切断了身体与大地的能量连接。通过跺脚(Stomping)、滑行(Sliding)、静止站立(Stillness)等训练重建与地面的力量连接。', note:'跺脚要求将全身重量和意识贯注到与地面的每次撞击，冲击力向上传导激活全身能量系统。' },
+  { cat:'suzuki', term:'动物性能量', en:'Animal Energy', def:'前现代社会中人类身体保持的一种生命力——警觉、本能、随时准备行动的状态。传统日本表演形式（能剧的极度集中、歌舞伎的爆发性能量）是其艺术化表达。', note:'现代社会的"非动物化"(De-animalization)使演员身体变得惰性化。铃木训练目标是通过自觉训练恢复被文明驯服的身体能量。' },
+  { cat:'suzuki', term:'构筑', en:'Construction', def:'静止与运动之间的转换瞬间。真正的力量不在运动中，而在绝对静止突然爆发为运动、或高速运动突然冻结为静止的那个时刻。这创造出最强烈的舞台存在感。', note:'来源于能剧美学。绝对静止不是放松的不动，而是高度集中的、内部充满能量流动的静止。' },
+  { cat:'suzuki', term:'文化的身体', en:'The Body as Culture', def:'铃木的核心理论概念。不同文化的身体使用方式本身就是深层文化表达——身体不是文化的载体，身体就是文化。现代化正在消灭身体使用方式的多样性。', note:'对你的研究方向的启示：数字技术是否在制造"去文化化"的身体？动捕数据抹去了身体的文化特殊性。' },
+
+  // ===== 巴尔巴 =====
+  { cat:'barba', term:'前表现性', en:'Pre-expressivity', def:'先于任何具体文化表达内容而存在的身体使用原则。区分三个层次：1）日常身体技术（功能性、节省能量）；2）超日常身体技术（打破日常习惯的"被决定的"身体使用）；3）虚拟化技术（杂技特技）。', note:'核心论点：不同文化传统在"如何让身体活起来"的问题上存在跨文化共同原则——这些共同原则就是"前表现性"。' },
+  { cat:'barba', term:'反复出现的原则', en:'Recurring Principles', def:'四大原则：1）平衡的改变(Altered Balance)——非日常平衡创造存在感；2）对立原则(Opposition)——身体各部分力量对抗；3）能量一致(Consistent Energy)——投入超出功能需要的能量；4）简化/等价(Equivalence)——省略日常动作某些阶段。', note:'跨文化例证：能剧前倾、芭蕾外开、京剧子午相——都是"平衡的改变"在不同文化中的体现。' },
+  { cat:'barba', term:'第三剧场', en:'Third Theatre', def:'第一剧场=主流商业剧场；第二剧场=先锋实验剧场；第三剧场=处于社会边缘、由特定社群创造维持、以集体训练和生活方式为基础的剧团。不是美学选择而是存在方式。', note:'欧丁剧团是典范：位于丹麦小镇、成员来自多国、持续数十年集体训练。' },
+  { cat:'barba', term:'以物换物', en:'Barter', def:'社区戏剧实践概念。欧丁剧团前往陌生社区时，用他们的表演换取当地社区的文化表达（歌曲、舞蹈、仪式等），建立对等的文化交换关系。', note:'核心精神：剧团不是来"教化"社区，而是承认社区拥有同等价值的表演传统。' },
+  { cat:'barba', term:'超日常身体技术', en:'Extra-daily Techniques', def:'表演者在舞台上打破日常身体习惯、创造"被决定的"(decided)身体使用方式。不同于日常身体技术（最小消耗达到功能目的）和虚拟化技术（杂技极限）。', note:'所有表演传统的核心都是让身体"非日常化"——这是巴尔巴跨文化比较的方法论基点。' },
+
+  // ===== 中国表演理论 =====
+  { cat:'china', term:'虚实结合', en:'Integration of Virtual and Real', def:'十六字精华之一，处理表演与世界的关系。以"无"创造"有"——马鞭代千军，圆场行万里。虚不是空无，而是留白和想象的空间；实不是照搬，而是精炼后的本质。', note:'在数字表演语境下：CGI角色（虚）与真人表演（实）的关系，可以用"虚实结合"来理论化。' },
+  { cat:'china', term:'形神兼备', en:'Unity of Form and Spirit', def:'十六字精华之二，处理身体与精神的关系。形=外在身体技术/程式，神=内在精神气韵。不偏废任何一方——既不是纯技术展示，也不是无形式的情感宣泄。', note:'超越了西方"由内到外vs由外到内"的二元对立——在中国美学中，形与神是一体两面。' },
+  { cat:'china', term:'设身处地', en:'Empathetic Positioning', def:'十六字精华之三，处理演员与角色的关系。"入乎其内"——演员需要真正进入角色的处境去感受和体验。', note:'与斯坦尼"假使"(Magic If)精准对应："如果我处于这种情境，我会怎么做？"但比假使更含蓄、更整体。' },
+  { cat:'china', term:'似我非我', en:'I-yet-not-I', def:'十六字精华之四，处理自我与他者的关系。角色中有"我"的真实体验（似我），但"我"已被角色转化而不再是日常的我（非我）。这是中国式的第三路径，超越斯坦尼（完全化身）与布莱希特（完全间离）。', note:'与Phelan表演本体论对话：表演者同时"在场"和"缺席"——"似我非我"正是这种悖论的东方表述。' },
+  { cat:'china', term:'心象说', en:'Heart-Image Theory', def:'焦菊隐将斯坦尼体系与中国戏曲传统结合的创造性贡献。演员在接触角色后，内心会形成一个角色的"心象"（内心形象），这个心象是角色从演员自身有机天性中生长出来的结果。', note:'北京电影学院表演教学体系的独特贡献，也是斯坦尼体系中国化的标志性成果。' },
+
+  // ===== 人类表演学 =====
+  { cat:'perform', term:'广义表演', en:'Broad Spectrum Performance', def:'谢克纳提出：表演不限于舞台艺术，包括仪式、运动、日常生活、政治等。表演七大功能：娱乐、建构美与身份、标记或改变身份、建造社群、治愈、传授与说服、处理神圣与世俗。', note:'打破了"表演=剧场"的传统等式，为跨学科的表演研究奠定基础。' },
+  { cat:'perform', term:'是/作为表演', en:'Is/As Performance', def:'"是表演"(is performance)：事物本身就是表演（如戏剧、仪式）；"作为表演"(as performance)：用表演的视角去分析本不被视为表演的事物（如政治演讲、日常互动）。', note:'这个区分是人类表演学的方法论基石——它让"表演"从一种艺术形式变成一种认识工具。' },
+  { cat:'perform', term:'戏剧论', en:'Dramaturgical Theory', def:'戈夫曼提出的社会学理论。日常生活中人人都在"表演"——前台（公开展示的自我）与后台（私密的真实自我）的区分。日常互动是一种"印象管理"。', note:'为谢克纳的广义表演概念提供了社会学基础，将表演从艺术领域扩展到社会生活分析。' },
+
+  // ===== 技术哲学 =====
+  { cat:'tech', term:'座架', en:'Gestell (Enframing)', def:'海德格尔认为现代技术的本质不是机器或工具，而是一种"座架"——将自然和一切存在者都视为随时可被开发利用的"持存物"(Standing-Reserve)的方式。世界变成巨大的"资源库"。', note:'经典对比：风车顺应自然（风吹则转），水电站"座架"自然（强迫河流转化为电力储存）。莱茵河从诗意景观变成"能源提供源"。' },
+  { cat:'tech', term:'此在', en:'Dasein', def:'海德格尔对人的存在方式的命名。三个核心结构：被抛性(Thrownness)——无法选择地被"抛"入特定历史和处境；沉沦(Falling)——随波逐流的非本真状态；筹划(Projection)——面向未来的规划和可能性。', note:'表演对应：被抛性→规定情境，沉沦→机械化表演，筹划→最高任务/贯穿动作。' },
+  { cat:'tech', term:'本有', en:'Ereignis (Event of Appropriation)', def:'人与存在相互认领的源头时刻。本有是对抗座架的力量——座架将一切视为技术资源，本有则是两者融合让真理显现的事件。', note:'比喻：乐谱（存在）+演奏者（人）→音乐响起的瞬间就是本有。在表演中，它是回归有机天性、情感自然流淌的状态。' },
+  { cat:'tech', term:'四因论', en:'The Four Causes', def:'亚里士多德的四个因果维度：质料因（由什么构成）、形式因（什么样子）、动力因（谁让它做成的）、目的因（为了什么而存在）。', note:'海德格尔"银圣杯"例：银子(质料)→杯形(形式)→银匠(动力)→献祭仪式(目的)。斯蒂格勒认为现代技术中，技术本身变成了目的因。' },
+  { cat:'tech', term:'技术化', en:'Technization (Stiegler)', def:'斯蒂格勒核心论点：人发明了技术，技术同时也发明了人。"谁"(Who/人)和"什么"(What/工具)是相互构成的。技术不是单纯的外在工具，而是人类自身的构成性要素。', note:'例：古人打磨燧石时，燧石被改变，但人的大脑皮层也被燧石改变——工具与使用者共同进化。' },
+  { cat:'tech', term:'代具', en:'Prosthesis', def:'斯蒂格勒概念：弥补人类先天不足与缺陷的技术工具。人类在生物学上是"缺陷存在"(Default Being)——没有尖牙利爪、没有厚皮毛，必须通过技术（代具）来弥补。', note:'代具不是"辅助工具"，而是人之为人的本体论条件——没有技术，人这种生物根本不成立。' },
+  { cat:'tech', term:'上手状态与在手状态', en:'Ready-to-hand / Present-at-hand', def:'上手状态(Zuhandenheit)：熟练使用工具时，工具与人融为一体，注意不到工具本身。在手状态(Vorhandenheit)：工具"坏了"才停下来把它当对象审视。', note:'表演对应：上手状态=完全入戏（技术透明化），在手状态=忘词出戏（技术暴露）。' },
+  { cat:'tech', term:'药 (法尔马空)', en:'Pharmakon', def:'斯蒂格勒借用德里达概念。技术既是药(cure)也是毒(poison)——同一种技术既能治愈也能致病。数字技术既拓展人的能力（药），也造成注意力退化、记忆外包（毒）。', note:'对表演研究的启示：动捕技术既保存表演（药），也将活生生的身体还原为数据点（毒）。' },
+];
+
 // ============ STATE ============
 let currentTab = 'quiz';
 let activeModules = new Set(MODULES.map(m => m.id));
@@ -685,22 +901,83 @@ function toggleModule(id) {
   renderCurrentPanel();
 }
 
+const ALL_TABS = ['quiz','flash','glossary','write','progress'];
+
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['quiz','flash','write','progress'][i] === tab);
+    t.classList.toggle('active', ALL_TABS[i] === tab);
   });
-  ['quiz','flash','write','progress'].forEach(t => {
+  ALL_TABS.forEach(t => {
     document.getElementById('panel-'+t).classList.toggle('hidden', t !== tab);
   });
+  // Hide module filter on glossary tab (it has its own category filter)
+  document.getElementById('moduleFilter').style.display = tab === 'glossary' ? 'none' : '';
   renderCurrentPanel();
 }
 
 function renderCurrentPanel() {
   if(currentTab === 'quiz') renderQuiz();
   else if(currentTab === 'flash') renderFlash();
+  else if(currentTab === 'glossary') renderGlossary();
   else if(currentTab === 'write') renderWrite();
   else if(currentTab === 'progress') renderProgress();
+}
+
+// ---- Glossary ----
+let glossaryCat = 'all';
+let glossarySearch = '';
+
+function renderGlossary() {
+  const panel = document.getElementById('panel-glossary');
+  // Category color map
+  const catColors = { stan:'#c96442', chekhov:'#0f3460', method:'#533483', brecht:'#b8860b', meyerhold:'#8b6914', grotowski:'#8b4513', suzuki:'#556b2f', barba:'#4a708b', china:'#e07c24', perform:'#b8860b', tech:'#2d6cdf' };
+
+  // Filter
+  let items = glossary;
+  if(glossaryCat !== 'all') items = items.filter(g => g.cat === glossaryCat);
+  if(glossarySearch.trim()) {
+    const q = glossarySearch.trim().toLowerCase();
+    items = items.filter(g => g.term.toLowerCase().includes(q) || g.en.toLowerCase().includes(q) || g.def.toLowerCase().includes(q) || g.note.toLowerCase().includes(q));
+  }
+
+  const catBar = GLOSSARY_CATS.map(c =>
+    `<button class="glossary-cat-btn ${glossaryCat===c.id?'active':''}" onclick="setGlossaryCat('${c.id}')">${c.name}</button>`
+  ).join('');
+
+  const itemsHtml = items.map((g, i) => {
+    const catInfo = GLOSSARY_CATS.find(c=>c.id===g.cat);
+    const color = catColors[g.cat] || '#999';
+    return `
+      <div class="glossary-item" id="gl-${i}">
+        <div class="glossary-header" onclick="toggleGlossaryItem(${i})">
+          <span class="glossary-dot" style="background:${color}"></span>
+          <span class="glossary-term">${g.term}<span class="glossary-term-en">${g.en}</span></span>
+          <span class="glossary-school">${catInfo?catInfo.name:''}</span>
+          <span class="glossary-arrow">›</span>
+        </div>
+        <div class="glossary-body">
+          <div class="glossary-def">${g.def}</div>
+          ${g.note ? `<div class="glossary-note"><div class="glossary-note-label">备注 / 考试提示</div>${g.note}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <input class="glossary-search" type="text" placeholder="搜索术语、英文名或关键词…" value="${glossarySearch}" oninput="glossarySearch=this.value;renderGlossary()" />
+    <div class="glossary-cat-bar">${catBar}</div>
+    <div class="glossary-count">共 ${items.length} 个术语</div>
+    ${itemsHtml}
+  `;
+}
+
+function setGlossaryCat(cat) {
+  glossaryCat = cat;
+  renderGlossary();
+}
+
+function toggleGlossaryItem(i) {
+  document.getElementById('gl-'+i).classList.toggle('open');
 }
 
 // ---- Quiz ----
