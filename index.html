@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="考博复习">
+<meta name="apple-mobile-web-app-title" content="表演理论知识库">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c96442">
-<title>考博复习工具</title>
+<title>表演理论知识库</title>
 <style>
 :root {
   --bg: #f5f0e8;
@@ -457,8 +457,8 @@ body {
 <body>
 <div class="container">
   <div class="header">
-    <h1>考博复习工具</h1>
-    <div class="sub">哲学 · 表演学 · 电影史 · 随时随地</div>
+    <h1>表演理论知识库</h1>
+    <div class="sub">表演学 · 哲学 · 电影史 · 随时温习</div>
   </div>
 
   <div class="stats-bar" id="statsBar"></div>
@@ -538,7 +538,7 @@ const flashcards = [
   { module:'china', q:'中国戏曲表演"十六字精华"？', a:'虚实结合、形神兼备、设身处地、似我非我。逻辑递进：虚实结合（表演与世界的关系）→形神兼备（身体与精神的关系）→设身处地（演员与角色的关系）→似我非我（自我与他者的关系）。' },
   { module:'china', q:'"似我非我"如何超越斯坦尼与布莱希特？', a:'既不是斯坦尼的完全成为角色，也不是布莱希特的完全间离——是中国式第三路径。角色中有"我"的真实体验（似我），但"我"已被角色转化（非我）。与Phelan表演本体论对话：表演者同时"在场"和"缺席"。' },
   { module:'china', q:'焦菊隐的"心象说"是什么？', a:'焦菊隐将斯坦尼体系与中国戏曲传统结合的创造性贡献。演员在接触角色后，内心会形成一个角色的"心象"（内心形象），这个心象是角色从演员自身有机天性中生长出来的结果。这是北电体系的独特贡献，也是斯坦尼体系中国化的标志成果。' },
-  { module:'china', q:'赵宁宇的学术背景和核心位置？', a:'北京电影学院表演学院教授、博导，戏剧艺术研究院院长。兼具导演、演员、学者三重身份。主要著作：《表演技术新论》《产业化生存》。核心话题：斯坦尼体系中国传播史、数字时代表演新挑战、中国电影表演民族化。⚠️ 报考博导，必须精读其著作。' },
+  { module:'china', q:'赵宁宇的学术背景和核心位置？', a:'北京电影学院表演学院教授、博导，戏剧艺术研究院院长。兼具导演、演员、学者三重身份。主要著作：《表演技术新论》《产业化生存》。核心话题：斯坦尼体系中国传播史、数字时代表演新挑战、中国电影表演民族化。建议精读其著作。' },
 
   // 人类表演学
   { module:'perform', q:'谢克纳"广义表演"的含义？', a:'表演不限于舞台，包括仪式、运动、日常生活、政治等。表演七大功能：娱乐、建构美与身份、标记或改变身份、建造社群、治愈、传授与说服、处理神圣与世俗。' },
@@ -1021,7 +1021,7 @@ function renderGlossary() {
         <div class="glossary-body">
           <div class="glossary-def">${g.def}</div>
           ${g.quote ? `<div class="glossary-quote">${g.quote}</div>` : ''}
-          ${g.note ? `<div class="glossary-note"><div class="glossary-note-label">备注 / 考试提示</div>${g.note}</div>` : ''}
+          ${g.note ? `<div class="glossary-note"><div class="glossary-note-label">备注 / 延伸</div>${g.note}</div>` : ''}
         </div>
       </div>`;
   }).join('');
